@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Sticky Savings Rate</title>
+<meta name="description" content="How slowly do Belgian banks pass ECB rate hikes on to savers? A first-order ODE model and pass-through regressions on ECB data, 2003–2026.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<style>
+  :root {
+    --bg: #faf8f4; --surface: #ffffff; --ink: #1c1c1a; --muted: #5f5d57; --line: #e4e0d7;
+    --savings: #1e8449; --savings-soft: #e3f2e8; --mortgage: #c0392b; --term: #2874a6; --policy: #1c1c1a;
+    --overnight: #7f8c8d; --accent: #1e8449;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141513; --surface: #1c1d1b; --ink: #ecebe6; --muted: #a3a199; --line: #2f302c;
+      --savings: #4cc483; --savings-soft: #1b2e22; --mortgage: #ec7063; --term: #5dade2; --policy: #ecebe6;
+      --overnight: #aab7b8; --accent: #4cc483;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141513; --surface: #1c1d1b; --ink: #ecebe6; --muted: #a3a199; --line: #2f302c;
+    --savings: #4cc483; --savings-soft: #1b2e22; --mortgage: #ec7063; --term: #5dade2; --policy: #ecebe6;
+    --overnight: #aab7b8; --accent: #4cc483;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.65 "Inter", system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 0 16px 80px; }
+  .wide { max-width: 1040px; margin-left: auto; margin-right: auto; }
+  h1, h2, h3 { font-family: "Source Serif 4", Georgia, serif; line-height: 1.2; }
+  h1 { font-size: clamp(2.1rem, 6vw, 3.3rem); margin: 0 0 .4em; letter-spacing: -0.01em; }
+  h2 { font-size: 1.65rem; margin: 2.6em 0 .6em; padding-top: .6em; border-top: 1px solid var(--line); }
+  h3 { font-size: 1.2rem; margin: 1.8em 0 .4em; }
+  p { margin: 0 0 1em; }
+  a { color: var(--accent); }
+  .kicker { font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 64px 0 14px; }
+  .lede { font-size: 1.22rem; color: var(--muted); font-family: "Source Serif 4", Georgia, serif; }
+  .byline { font-size: .9rem; color: var(--muted); margin-top: 1.4em; }
+  .question { background: var(--savings-soft); border-left: 4px solid var(--savings); padding: 18px 22px; margin: 2em 0;
+              font-family: "Source Serif 4", Georgia, serif; font-size: 1.2rem; border-radius: 0 6px 6px 0; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 2em 0; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+  .stat b { display: block; font-family: "Source Serif 4", Georgia, serif; font-size: 2rem; line-height: 1.1; }
+  .stat span { font-size: .85rem; color: var(--muted); }
+  .stat.green b { color: var(--savings); } .stat.red b { color: var(--mortgage); }
+  figure { margin: 2em 0; }
+  figure img { width: 100%; height: auto; display: block; background: #fff; border-radius: 6px; border: 1px solid var(--line); }
+  figcaption { font-size: .88rem; color: var(--muted); margin-top: .6em; }
+  figcaption a { white-space: nowrap; }
+  .math { overflow-x: auto; padding: 4px 0; }
+  .eq { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin: 1.2em 0; overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  th, td { padding: 7px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-weight: 600; color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
+  tr.hl td { background: var(--savings-soft); font-weight: 600; }
+  .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; margin: 1.2em 0; }
+  .explorer { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; margin: 2em 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin-bottom: 12px; font-size: .9rem; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; flex-wrap: wrap; }
+  .seg button { background: none; border: 0; padding: 6px 11px; font: inherit; color: var(--ink); cursor: pointer; border-right: 1px solid var(--line); }
+  .seg button:last-child { border-right: 0; }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+  .chk label { margin-right: 12px; white-space: nowrap; cursor: pointer; }
+  .chart-box { position: relative; height: 380px; }
+  .note { font-size: .85rem; color: var(--muted); }
+  ol li, ul li { margin-bottom: .45em; }
+  .findings li { margin-bottom: .9em; }
+  footer { border-top: 1px solid var(--line); margin-top: 4em; padding-top: 1.4em; font-size: .88rem; color: var(--muted); }
+  code { font-size: .88em; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
+  @media (max-width: 560px) { body { font-size: 16px; } .chart-box { height: 300px; } h2 { font-size: 1.4rem; } }
+</style>
+</head>
+<body>
+<main>
+
+<p class="kicker">Advanced Mathematics for Business &amp; Technology · VUB · 2026</p>
+<h1>The sticky savings rate</h1>
+<p class="lede">The ECB raised its policy rate by 4.5 percentage points in fourteen months. Belgian mortgage rates followed within weeks. Belgian savings rates barely moved. This page measures how slowly they moved, using a differential equation and twenty years of ECB data.</p>
+<p class="byline">Sadig Sadigov · <a href="https://github.com/ssadigov532-collab/belgian-savings-passthrough">Code &amp; data on GitHub</a></p>
+
+<div class="question">How fast, and how far, do Belgian banks pass changes in the ECB policy rate on to savers? And how does Belgium compare with Germany, France, the Netherlands and with Belgian mortgages?</div>
+
+<div class="stats">
+  <div class="stat"><b>+4.50 pp</b><span>ECB deposit rate, Jun 2022 → Sep 2023 (−0.50 % → 4.00 %)</span></div>
+  <div class="stat red"><b>+1.8 pp</b><span>Belgian mortgage rate over the same months (after already rising +0.5 pp before the first hike)</span></div>
+  <div class="stat green"><b>+0.86 pp</b><span>Belgian savings-account rate, Jun 2022 → May 2024</span></div>
+  <div class="stat green"><b>6.1 months</b><span>half-life of the Belgian savings rate's adjustment (ODE model)</span></div>
+</div>
+
+<h2>1 · Why this question</h2>
+<p>Most Belgian household savings sit in <em>regulated savings accounts</em> (gereglementeerde spaarrekening / compte d'épargne réglementé). These accounts are tax-advantaged and banks can change their rate at any time. When the ECB started raising rates in July 2022, banks could suddenly earn up to 4 % on the money they parked at the central bank. Savers kept earning well under 1 %.</p>
+<p>This became a political issue in 2023. The finance minister criticised the banks publicly, and in September 2023 the Belgian state sold a one-year state note directly to households at 2.81 % net. It raised about €22 billion, the largest such issue on record. My question is whether this frustration is visible in the data, and whether Belgium was really worse than its neighbours.</p>
+
+<h2>2 · Data</h2>
+<p>All data comes from the public <a href="https://data.ecb.europa.eu/">ECB Data Portal</a>. It covers January 2003 to September 2026, monthly, for Belgium, Germany, France, the Netherlands and the euro area:</p>
+<ul>
+  <li><b>ECB deposit facility rate</b> <span class="math">\(P(t)\)</span>, the rate banks earn on money parked at the ECB. The ECB publishes it daily and I average it per month.</li>
+  <li><b>Bank interest rates (MIR statistics)</b> on household products: savings accounts (notice ≤ 3 months), current accounts, term deposits (≤ 1 year) and mortgages. These are new-business rates, in % per year.</li>
+</ul>
+<p>That gives 21 series of 285 months each. A single script (<code>src/01_download_data.py</code>) downloads everything again through the ECB's API.</p>
+
+<h2>3 · Analysis 1: an ODE for the bank rate</h2>
+<p>A bank's rate does not jump to a new level when the ECB moves. It drifts towards a target, and it drifts faster when it is further away from that target. That gives a first-order linear differential equation:</p>
+<div class="eq">$$\frac{dr}{dt} \;=\; k\,\big(\alpha + \beta\,P(t) - r(t)\big)$$</div>
+<ul>
+  <li><span class="math">\(\alpha + \beta P\)</span> is the <b>long-run target</b>. In the long run, a 1 pp ECB hike raises the bank rate by <span class="math">\(\beta\)</span> pp. When <span class="math">\(\beta = 1\)</span> the full hike reaches customers; when <span class="math">\(\beta = 0.2\)</span> only a fifth does.</li>
+  <li><span class="math">\(k\)</span> is the <b>speed</b>. Each month the bank closes a share <span class="math">\(1-e^{-k}\)</span> of the gap, so the <b>half-life</b> is <span class="math">\(\ln 2 / k\)</span> months.</li>
+</ul>
+<h3>Solving it</h3>
+<p>Rewrite the equation as <span class="math">\(r' + k r = k(\alpha + \beta P)\)</span> and multiply by the integrating factor <span class="math">\(e^{kt}\)</span>. If the ECB rate is constant at <span class="math">\(P_n\)</span> during month <span class="math">\(n\)</span>, the exact solution over that month is</p>
+<div class="eq">$$r(n) \;=\; r^*_n + \big(r(n-1) - r^*_n\big)\,e^{-k}, \qquad r^*_n = \alpha + \beta P_n .$$</div>
+<p>Starting from the observed rate in January 2021, I solve the equation forward month by month. I then pick <span class="math">\(k, \alpha, \beta\)</span> so the solved path is as close as possible to the data (non-linear least squares with <code>scipy.optimize.least_squares</code>). As a check, I also integrate the equation numerically with <code>scipy.integrate.solve_ivp</code>. The two paths differ by less than 0.000002 percentage points.</p>
+
+<figure class="wide">
+  <img src="figures/fig1_belgium_ode_fit.png" alt="Belgian savings, term deposit and mortgage rates versus the ECB deposit rate, 2021 to 2026, with fitted ODE paths. Savings rates rise slowly to about 1 percent while the ECB rate reaches 4 percent.">
+  <figcaption><b>Figure 1.</b> Belgium, January 2021 – September 2026. Dots show the data; lines show the solved ODE. The savings rate (green) crawls up with a 6-month half-life and settles far below the ECB rate. <a href="figures/fig1_belgium_ode_fit.pdf">PDF</a></figcaption>
+</figure>
+
+<div class="table-wrap">
+<table id="ode-table">
+  <thead><tr><th>Belgium</th><th>Half-life</th><th>Long-run β</th><th>α</th><th>R²</th></tr></thead>
+  <tbody></tbody>
+</table>
+</div>
+<p class="note">"&lt; 1 month" means the fitted speed hit its upper limit: the rate adjusts within the same month, so no precise half-life can be measured from monthly data.</p>
+
+<h3>Explore every country and product</h3>
+<div class="explorer wide">
+  <div class="controls">
+    <div class="seg" id="country-seg" role="group" aria-label="Country"></div>
+    <div class="chk" id="product-chk"></div>
+  </div>
+  <div class="chart-box"><canvas id="chart" aria-label="Interactive chart of bank rates and ODE fit"></canvas></div>
+  <p class="note" id="explorer-note" style="margin:.8em 0 0"></p>
+</div>
+
+<h2>4 · Analysis 2: how much of each move gets through?</h2>
+<p>The ODE assumes one smooth exponential path. Analysis 2 checks the result with two methods that assume much less.</p>
+<p><b>(A) Pass-through per phase.</b> For the hiking phase (June 2022 → May 2024) and the cutting phase (May 2024 → December 2025), I compute</p>
+<div class="eq">$$\beta_{\text{phase}} = \frac{\Delta\,\text{bank rate}}{\Delta\,\text{ECB rate}}.$$</div>
+<p><b>(B) Distributed-lag regression</b> on the full 2003–2026 history:</p>
+<div class="eq">$$\Delta r_t = c + \sum_{j=0}^{12} b_j\,\Delta P_{t-j} + \varepsilon_t , \qquad B(h) = \sum_{j=0}^{h} b_j .$$</div>
+<p>Here <span class="math">\(b_j\)</span> is the effect on this month's bank rate of an ECB move <span class="math">\(j\)</span> months ago. The cumulative sum <span class="math">\(B(h)\)</span> is the share of a move passed on after <span class="math">\(h\)</span> months. I estimate it by OLS with Newey–West standard errors, because monthly rate changes are autocorrelated.</p>
+
+<figure class="wide">
+  <img src="figures/fig2_country_comparison.png" alt="Bar charts comparing savings and mortgage pass-through across Belgium, Germany, France, the Netherlands and the euro area, and savings-rate half-lives.">
+  <figcaption><b>Figure 2.</b> Left: the share of the ECB's move that reached customers, per phase. Right: the ODE half-life of savings rates. Belgium passed on 19 % of the hikes to savers, against 29 % for the euro area. <a href="figures/fig2_country_comparison.pdf">PDF</a></figcaption>
+</figure>
+
+<figure class="wide">
+  <img src="figures/fig3_cumulative_passthrough.png" alt="Cumulative pass-through over 12 months after an ECB move: term deposits near 1, mortgages around 0.4, savings around 0.3, current accounts near 0.1.">
+  <figcaption><b>Figure 3.</b> The cumulative pass-through <span class="math">\(B(h)\)</span> for Belgian products, from the regression on 2003–2026 data. Shaded bands are 95 % confidence intervals. <a href="figures/fig3_cumulative_passthrough.pdf">PDF</a></figcaption>
+</figure>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Savings accounts</th><th>ODE β (2021–26)</th><th>β hiking</th><th>β cutting</th><th>DL B(12) (2003–26)</th><th>ODE half-life</th></tr></thead>
+  <tbody id="cmp-table"></tbody>
+</table>
+</div>
+
+<h2>5 · What it means</h2>
+<ol class="findings">
+  <li><b>Belgian savers got about a fifth of the ECB's hikes.</b> Three different methods agree. The ODE gives a long-run β of 0.23, the hiking phase gives 0.19, and the 2003–2026 regression gives 0.30. When the ECB paid banks 4 %, the model's long-run target for the savings rate was only about 1.1 %, and the actual rate peaked at 1.03 % in November 2024.</li>
+  <li><b>It was also slow.</b> The ODE half-life is 6.1 months, so the Belgian savings rate closed only about 11 % of its gap each month. That is why the rate was still at 0.09 % in December 2022, by which time the ECB had raised its rate to 2 %.</li>
+  <li><b>Banks <em>can</em> move fast when they have to.</b> Belgian one-year term deposits passed on 73 % of the hikes within the same month, and mortgages rose before the ECB even started. The slowness is specific to savings and current accounts, where money stays put because customers rarely switch banks.</li>
+  <li><b>Belgium was among the lowest, but not alone.</b> Belgium's savings pass-through (0.19) is below the euro area (0.29) and the Netherlands (0.36), and close to Germany (0.15). France looks generous, but its savings rate is mostly the government-set Livret A rate, not a bank decision.</li>
+  <li><b>On the way down, savings rates were sticky too.</b> Savings rates fell by only 0.12 pp per 1 pp of ECB cuts. Because they had risen so little, there was little to give back, and the gap between the ECB rate and the savings rate shrank as the ECB cut.</li>
+</ol>
+
+<h3>Limitations</h3>
+<ul>
+  <li>The ODE has no anticipation. Mortgage rates are priced off market rates that move <em>before</em> the ECB acts, so the fit for mortgages is weaker (R² 0.85). A delay or expectations term would improve it.</li>
+  <li>Monthly data cannot measure adjustment faster than one month. Those cases show as "&lt; 1 month".</li>
+  <li>These are national averages. Some Belgian banks and online banks paid much more than the average rate.</li>
+  <li>Belgian savings accounts have a legal minimum rate, and part of the return is a loyalty premium paid after 12 months. The data reports the average rate, which mixes both.</li>
+</ul>
+
+<h2>6 · Reproduce it</h2>
+<p>All code, data and figures are in the <a href="https://github.com/ssadigov532-collab/belgian-savings-passthrough">GitHub repository</a>.</p>
+<div class="eq" style="font-family: ui-monospace, Consolas, monospace; font-size:.85rem; white-space:pre">pip install -r requirements.txt
+python src/01_download_data.py          # ECB data
+python src/02_ode_model.py              # Analysis 1 + Figure 1
+python src/03_passthrough_regression.py # Analysis 2 + Figures 2-3
+python src/04_build_website_data.py     # this website's data</div>
+
+<footer>Data: European Central Bank, Data Portal (MIR and FM datasets). Project for Advanced Mathematics for Business and Technology, Vrije Universiteit Brussel. Built with Python (pandas, SciPy, statsmodels, matplotlib), Chart.js and KaTeX.</footer>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(function () {
+  try {
+    renderMathInElement(document.body, { delimiters: [
+      { left: "$$", right: "$$", display: true }, { left: "\\(", right: "\\)", display: false } ] });
+  } catch (e) { /* math stays as plain text */ }
+
+  const COUNTRIES = { BE: "Belgium", DE: "Germany", FR: "France", NL: "Netherlands", U2: "Euro area" };
+  const PRODUCTS = { savings: "Savings", overnight: "Current accounts", term1y: "Term deposits ≤1y", mortgage: "Mortgages" };
+  const COLORVAR = { savings: "--savings", overnight: "--overnight", term1y: "--term", mortgage: "--mortgage" };
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const hl = s => s.within_month ? "< 1 month" : s.half_life.toFixed(1) + " months";
+  const f2 = x => (x === null || x === undefined) ? "–" : x.toFixed(2);
+
+  let state = { country: "BE", products: new Set(["savings", "mortgage", "term1y"]) };
+  let chart, data;
+
+  fetch("data.json").then(r => r.json()).then(d => { data = d; buildTables(); buildControls(); draw(); })
+    .catch(() => { document.getElementById("explorer-note").textContent = "Interactive chart could not load its data (open the page through a web server)."; });
+
+  function buildTables() {
+    const tb = document.querySelector("#ode-table tbody");
+    ["savings", "overnight", "term1y", "mortgage"].forEach(p => {
+      const s = data.series["BE_" + p];
+      tb.insertAdjacentHTML("beforeend",
+        `<tr${p === "savings" ? ' class="hl"' : ""}><td>${PRODUCTS[p]}</td><td>${hl(s)}</td><td>${f2(s.beta)}</td><td>${f2(s.alpha)}</td><td>${f2(s.r2)}</td></tr>`);
+    });
+    const ct = document.getElementById("cmp-table");
+    Object.keys(COUNTRIES).forEach(c => {
+      const s = data.series[c + "_savings"];
+      ct.insertAdjacentHTML("beforeend",
+        `<tr${c === "BE" ? ' class="hl"' : ""}><td>${COUNTRIES[c]}${c === "FR" ? "*" : ""}</td><td>${f2(s.beta)}</td><td>${f2(s.beta_hiking)}</td><td>${f2(s.beta_cutting)}</td><td>${f2(s.dl12)}</td><td>${hl(s)}</td></tr>`);
+    });
+    ct.insertAdjacentHTML("beforeend", `<tr><td colspan="6" style="white-space:normal;color:var(--muted);font-size:.8rem">* France: savings rate mostly set by the government (Livret A).</td></tr>`);
+  }
+
+  function buildControls() {
+    const seg = document.getElementById("country-seg");
+    Object.entries(COUNTRIES).forEach(([c, n]) => {
+      const b = document.createElement("button");
+      b.textContent = n; b.setAttribute("aria-pressed", c === state.country);
+      b.onclick = () => { state.country = c; [...seg.children].forEach(x => x.setAttribute("aria-pressed", x === b)); draw(); };
+      seg.appendChild(b);
+    });
+    const chk = document.getElementById("product-chk");
+    Object.entries(PRODUCTS).forEach(([p, n]) => {
+      const l = document.createElement("label");
+      l.innerHTML = `<input type="checkbox" ${state.products.has(p) ? "checked" : ""}> ${n}`;
+      l.querySelector("input").onchange = e => { e.target.checked ? state.products.add(p) : state.products.delete(p); draw(); };
+      chk.appendChild(l);
+    });
+  }
+
+  function draw() {
+    const labels = data.months;
+    const ds = [{ label: "ECB deposit rate P(t)", data: data.policy, borderColor: css("--policy"), borderWidth: 2,
+                  stepped: "middle", pointRadius: 0, fill: false }];
+    const notes = [];
+    Object.keys(PRODUCTS).forEach(p => {
+      if (!state.products.has(p)) return;
+      const s = data.series[state.country + "_" + p], col = css(COLORVAR[p]);
+      ds.push({ label: PRODUCTS[p] + " (data)", data: s.observed, borderColor: col, backgroundColor: col,
+                showLine: false, pointRadius: 2.5, pointHoverRadius: 4 });
+      ds.push({ label: PRODUCTS[p] + " (ODE)", data: s.model, borderColor: col, borderWidth: 2.2, pointRadius: 0, fill: false });
+      notes.push(`${PRODUCTS[p]}: half-life ${hl(s)}, long-run β ${f2(s.beta)}`);
+    });
+    document.getElementById("explorer-note").textContent = COUNTRIES[state.country] + " — " + (notes.join(" · ") || "select a product");
+    const grid = css("--line"), ink = css("--muted");
+    if (chart) chart.destroy();
+    chart = new Chart(document.getElementById("chart"), {
+      type: "line", data: { labels, datasets: ds },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+          legend: { labels: { color: ink, boxWidth: 12, font: { size: 11 },
+                    filter: i => !i.text.endsWith("(data)") } },
+          tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y == null ? "–" : c.parsed.y.toFixed(2)} %` } }
+        },
+        scales: {
+          x: { ticks: { color: ink, maxTicksLimit: 8, autoSkip: true }, grid: { color: grid } },
+          y: { ticks: { color: ink, callback: v => v + " %" }, grid: { color: grid } }
+        }
+      }
+    });
+  }
+  if (window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => data && draw());
+})();
+</script>
+</body>
+</html>
