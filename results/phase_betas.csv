@@ -1,0 +1,21 @@
+country,product,series,hiking_change_bank_pp,hiking_change_ecb_pp,beta_hiking,cutting_change_bank_pp,cutting_change_ecb_pp,beta_cutting
+Belgium,Savings accounts,BE_savings,0.8600,4.5000,0.1911,-0.2400,-2.0000,0.1200
+Belgium,Current accounts,BE_overnight,0.0800,4.5000,0.0178,-0.0200,-2.0000,0.0100
+Belgium,Term deposits (<=1y),BE_term1y,3.2800,4.5000,0.7289,-1.7200,-2.0000,0.8600
+Belgium,Mortgages,BE_mortgage,1.5100,4.5000,0.3356,0.0100,-2.0000,-0.0050
+Germany,Savings accounts,DE_savings,0.6800,4.5000,0.1511,-0.0300,-2.0000,0.0150
+Germany,Current accounts,DE_overnight,0.6200,4.5000,0.1378,-0.1600,-2.0000,0.0800
+Germany,Term deposits (<=1y),DE_term1y,3.0500,4.5000,0.6778,-1.4300,-2.0000,0.7150
+Germany,Mortgages,DE_mortgage,1.3400,4.5000,0.2978,-0.2000,-2.0000,0.1000
+France,Savings accounts,FR_savings,1.8000,4.5000,0.4000,-0.9900,-2.0000,0.4950
+France,Current accounts,FR_overnight,0.0600,4.5000,0.0133,-0.0300,-2.0000,0.0150
+France,Term deposits (<=1y),FR_term1y,3.1000,4.5000,0.6889,-1.5200,-2.0000,0.7600
+France,Mortgages,FR_mortgage,2.1400,4.5000,0.4756,-0.5000,-2.0000,0.2500
+Netherlands,Savings accounts,NL_savings,1.6400,4.5000,0.3644,-0.3400,-2.0000,0.1700
+Netherlands,Current accounts,NL_overnight,0.2600,4.5000,0.0578,-0.1300,-2.0000,0.0650
+Netherlands,Term deposits (<=1y),NL_term1y,1.4500,4.5000,0.3222,-0.6900,-2.0000,0.3450
+Netherlands,Mortgages,NL_mortgage,1.5800,4.5000,0.3511,-0.2700,-2.0000,0.1350
+Euro area,Savings accounts,U2_savings,1.3100,4.5000,0.2911,-0.5400,-2.0000,0.2700
+Euro area,Current accounts,U2_overnight,0.3900,4.5000,0.0867,-0.1400,-2.0000,0.0700
+Euro area,Term deposits (<=1y),U2_term1y,2.8800,4.5000,0.6400,-1.3400,-2.0000,0.6700
+Euro area,Mortgages,U2_mortgage,1.8400,4.5000,0.4089,-0.4600,-2.0000,0.2300
